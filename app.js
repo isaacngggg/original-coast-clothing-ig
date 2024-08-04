@@ -134,20 +134,21 @@ app.post("/webhook", (req, res) => {
 
         if (!(senderIgsid in users)) {
           // First time seeing this user
+          console.log(`First time seeing user: ${senderIgsid}`);
           let user = new User(senderIgsid);
-          let userProfile = await GraphApi.getUserProfile(senderIgsid);
-          console.log(`Got user profile: ${userProfile}`);
-          if (userProfile) {
-            user.setProfile(userProfile);
+          GraphApi.getUserProfile(senderIgsid).then((userProfile) => {
+            console.log(`Got user profile: ${userProfile}`);
+            if (userProfile) {
+              user.setProfile(userProfile);
 
-            users[senderIgsid] = user;
-            console.log(`Created new user profile`);
+              users[senderIgsid] = user;
+              console.log(`Created new user profile`);
 
-            console.dir(user);
-          }
+              console.dir(user);
+            }
+          });
         }
-
-        // Check if user profile exists before handling attachments
+        
         if (users[senderIgsid]) {
           if (webhookEvent.message.attachments[0] != null) {
             console.log("Got an attachment");
@@ -170,6 +171,7 @@ app.post("/webhook", (req, res) => {
             return;
           }
         }
+
         let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
         return receiveMessage.handleMessage();
       });
