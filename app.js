@@ -278,6 +278,11 @@ async function main() {
 async function handleWebhookEvent(senderId, firstName, videoId, url, caption) {
 
   const result = await insertVideoData(senderId, firstName, videoId, url, caption);
+  if (result.success) {
+    console.log('Data inserted successfully:', result.data);
+  } else {
+    console.error('Error inserting data:', result.error);
+  }
 
 }
 
