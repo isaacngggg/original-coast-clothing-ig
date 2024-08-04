@@ -8,6 +8,7 @@
 
 "use strict";
 
+
 // Import dependencies and set up http server
 const express = require("express"),
   { urlencoded, json } = require("body-parser"),
@@ -17,8 +18,13 @@ const express = require("express"),
   GraphApi = require("./services/graph-api"),
   User = require("./services/user"),
   config = require("./services/config"),
+
+  { supabase, insertVideoData } = require('./supabaseClient'),
   i18n = require("./i18n.config"),
   app = express();
+
+
+
 
 // Object to store known users.
 var users = {};
@@ -37,7 +43,7 @@ app.use(json({ verify: verifyRequestSignature }));
 app.use(express.static(path.join(path.resolve(), "public")));
 
 // Find the URL we're serving from
-app.all("*", function(req, res, next) {
+app.all("*", function (req, res, next) {
   // "x-forwarded-proto" will have https even when tunnelling to local
   const reqProtocol = req.get("x-forwarded-proto")
     ? req.get("x-forwarded-proto").split(",")[0]
@@ -51,7 +57,7 @@ app.all("*", function(req, res, next) {
 });
 
 // Respond with index file when a GET request is made to the homepage
-app.get("/", function(_req, res) {
+app.get("/", function (_req, res) {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
@@ -93,8 +99,9 @@ app.post("/webhook", (req, res) => {
     // Return a '200 OK' response to all requests
     res.status(200).send("EVENT_RECEIVED");
 
+
     // Iterate over each entry - there may be multiple if batched
-    body.entry.forEach(async function(entry) {
+    body.entry.forEach(async function (entry) {
       // Handle Page Changes event
       if ("changes" in entry) {
         let receiveMessage = new Receive();
@@ -111,7 +118,7 @@ app.post("/webhook", (req, res) => {
       }
 
       // Iterate over webhook events - there may be multiple
-      entry.messaging.forEach(async function(webhookEvent) {
+      entry.messaging.forEach(async function (webhookEvent) {
         // Discard uninteresting events
         if (
           "message" in webhookEvent &&
@@ -123,16 +130,44 @@ app.post("/webhook", (req, res) => {
 
         // Get the sender IGSID
         let senderIgsid = webhookEvent.sender.id;
+        console.log(`Got first senderIgsid: ${senderIgsid}`);
 
         if (!(senderIgsid in users)) {
           // First time seeing this user
           let user = new User(senderIgsid);
           let userProfile = await GraphApi.getUserProfile(senderIgsid);
+          console.log(`Got user profile: ${userProfile}`);
           if (userProfile) {
             user.setProfile(userProfile);
+
             users[senderIgsid] = user;
             console.log(`Created new user profile`);
+
             console.dir(user);
+          }
+        }
+
+        // Check if user profile exists before handling attachments
+        if (users[senderIgsid]) {
+          if (webhookEvent.message.attachments[0] != null) {
+            console.log("Got an attachment");
+            if (webhookEvent.message.attachments[0].type === "ig_reel") {
+              console.log("Got a ig_reel");
+              let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
+              let url = webhookEvent.message.attachments[0].payload.url;
+              let caption = webhookEvent.message.attachments[0].payload.title;
+              let firstName = users[senderIgsid].name;
+              // let senderId = users[senderIgsid].igsid;
+
+              console.log(`Got videoId: ${videoId}`);
+              console.log(`Got url: ${url}`);
+              console.log(`Got caption: ${caption}`);
+              console.log(`Got firstName: ${firstName}`);
+              console.log(`Got senderIgsid: ${senderIgsid}`);
+
+              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption);
+            }
+            return;
           }
         }
         let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
@@ -202,41 +237,48 @@ async function main() {
   ];
 
   // Set our Icebreakers upon launch
-  await GraphApi.setIcebreakers(iceBreakers);
+  // await GraphApi.setIcebreakers(iceBreakers);
 
-  const persistentMenu = [
-    {
-      locale: "default",
-      call_to_actions: [
-        {
-          type: "postback",
-          title: "Talk to an agent",
-          payload: "CARE_HELP"
-        },
-        {
-          type: "postback",
-          title: "Outfit suggestions",
-          payload: "CURATION"
-        },
-        {
-          type: "web_url",
-          title: "Shop now",
-          url: "https://www.originalcoastclothing.com/"
-        }
-      ]
-    }
-  ];
+  // const persistentMenu = [
+  //   {
+  //     locale: "default",
+  //     call_to_actions: [
+  //       {
+  //         type: "postback",
+  //         title: "Talk to an agent",
+  //         payload: "CARE_HELP"
+  //       },
+  //       {
+  //         type: "postback",
+  //         title: "Outfit suggestions",
+  //         payload: "CURATION"
+  //       },
+  //       {
+  //         type: "web_url",
+  //         title: "Shop now",
+  //         url: "https://www.originalcoastclothing.com/"
+  //       }
+  //     ]
+  //   }
+  // ];
 
-  // Set our Persistent Menu upon launch
-  await GraphApi.setPersistentMenu(persistentMenu);
+  // // Set our Persistent Menu upon launch
+  // await GraphApi.setPersistentMenu(persistentMenu);
 
   // Set our page subscriptions
   await GraphApi.setPageSubscriptions();
 
   // Listen for requests :)
-  var listener = app.listen(config.port, function() {
+  var listener = app.listen(config.port, function () {
     console.log(`The app is listening on port ${listener.address().port}`);
   });
+}
+
+
+async function handleWebhookEvent(senderId, firstName, videoId, url, caption) {
+
+  const result = await insertVideoData(senderId, firstName, videoId, url, caption);
+
 }
 
 main();

@@ -13,9 +13,11 @@ module.exports = class User {
     this.igsid = igsid;
     this.name = "";
     this.profilePic = "";
+
   }
   setProfile(profile) {
     this.name = profile.name;
     this.profilePic = profile.profilePic;
+
   }
 };
