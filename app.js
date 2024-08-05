@@ -286,4 +286,6 @@ async function handleWebhookEvent(senderId, firstName, videoId, url, caption) {
 
 }
 
-main();
+(async () => {
+  await main();
+})();
