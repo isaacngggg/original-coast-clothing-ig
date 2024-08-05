@@ -127,56 +127,11 @@ app.post("/webhook", (req, res) => {
           console.log("Got an echo");
           return;
         }
+        handleInstagramEvent(webhookEvent).then(() => { 
+          console.log("handledInstagramEvent");
+        });
+        console.log("passed -- handleInstagramEvent");
 
-        // Get the sender IGSID
-        let senderIgsid = webhookEvent.sender.id;
-        console.log(`Got first senderIgsid: ${senderIgsid}`);
-
-        if (!(senderIgsid in users)) {
-          // First time seeing this user
-          console.log(`First time seeing user: ${senderIgsid}`);
-          let user = new User(senderIgsid);
-          try {
-            const userProfile = await GraphApi.getUserProfile(senderIgsid);
-            console.log(`Got user profile: ${userProfile}`);
-            if (userProfile) {
-              user.setProfile(userProfile);
-
-              users[senderIgsid] = user;
-              console.log(`Created new user profile`);
-
-              console.dir(user);
-            }
-          } catch (error) {
-            console.error(`Error fetching user profile: ${error}`);
-          }
-        }
-
-        if (users[senderIgsid]) {
-          if (webhookEvent.message.attachments[0] != null) {
-            console.log("Got an attachment");
-            if (webhookEvent.message.attachments[0].type === "ig_reel") {
-              console.log("Got a ig_reel");
-              let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
-              let url = webhookEvent.message.attachments[0].payload.url;
-              let caption = webhookEvent.message.attachments[0].payload.title;
-              let firstName = users[senderIgsid].name;
-              // let senderId = users[senderIgsid].igsid;
-
-              console.log(`Got videoId: ${videoId}`);
-              console.log(`Got url: ${url}`);
-              console.log(`Got caption: ${caption}`);
-              console.log(`Got firstName: ${firstName}`);
-              console.log(`Got senderIgsid: ${senderIgsid}`);
-
-              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption);
-            }
-            return;
-          }
-        }
-
-        let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
-        return receiveMessage.handleMessage();
       };
     });
   } else if (body.object === "page") {
@@ -212,6 +167,74 @@ function verifyRequestSignature(req, res, buf) {
     }
   }
 }
+
+async function insertVideo(senderId, firstName, videoId, url, caption) {
+
+  const result = await insertVideoData(senderId, firstName, videoId, url, caption);
+  if (result.success) {
+    console.log('Data inserted successfully:', result.data);
+  } else {
+    console.error('Error inserting data:', result.error);
+  }
+
+}
+
+async function handleInstagramEvent(webhookEvent) {
+
+  // Get the sender IGSID
+  let senderIgsid = webhookEvent.sender.id;
+  console.log(`Got first senderIgsid: ${senderIgsid}`);
+
+  if (!(senderIgsid in users)) {
+    // First time seeing this user
+    console.log(`First time seeing user: ${senderIgsid}`);
+    let user = new User(senderIgsid);
+    try {
+      const userProfile = await GraphApi.getUserProfile(senderIgsid);
+      console.log(`Got user profile: ${userProfile}`);
+      if (userProfile) {
+        user.setProfile(userProfile);
+
+        users[senderIgsid] = user;
+        console.log(`Created new user profile`);
+
+        console.dir(user);
+      }
+    } catch (error) {
+      console.error(`Error fetching user profile: ${error}`);
+    }
+  }
+
+  if (users[senderIgsid]) {
+    if (webhookEvent.message.attachments[0] != null) {
+      console.log("Got an attachment");
+      if (webhookEvent.message.attachments[0].type === "ig_reel") {
+        console.log("Got a ig_reel");
+        let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
+        let url = webhookEvent.message.attachments[0].payload.url;
+        let caption = webhookEvent.message.attachments[0].payload.title;
+        let firstName = users[senderIgsid].name;
+        // let senderId = users[senderIgsid].igsid;
+
+        console.log(`Got videoId: ${videoId}`);
+        console.log(`Got url: ${url}`);
+        console.log(`Got caption: ${caption}`);
+        console.log(`Got firstName: ${firstName}`);
+        console.log(`Got senderIgsid: ${senderIgsid}`);
+
+        await insertVideo(senderIgsid, firstName, videoId, url, caption);
+      }
+      return;
+    }
+  }
+
+  let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
+  return receiveMessage.handleMessage();
+};
+
+
+
+
 
 async function main() {
   // Check if all environment variables are set
@@ -280,15 +303,6 @@ async function main() {
 }
 
 
-async function handleWebhookEvent(senderId, firstName, videoId, url, caption) {
 
-  const result = await insertVideoData(senderId, firstName, videoId, url, caption);
-  if (result.success) {
-    console.log('Data inserted successfully:', result.data);
-  } else {
-    console.error('Error inserting data:', result.error);
-  }
-
-}
 
 main();
