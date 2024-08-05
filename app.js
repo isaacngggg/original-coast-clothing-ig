@@ -208,28 +208,28 @@ async function handleInstagramEvent(webhookEvent) {
     }
   }
 
-  if (users[senderIgsid]) {
-    if (webhookEvent.message.attachments[0] != null) {
-      console.log("Got an attachment");
-      if (webhookEvent.message.attachments[0].type === "ig_reel") {
-        console.log("Got a ig_reel");
-        let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
-        let url = webhookEvent.message.attachments[0].payload.url;
-        let caption = webhookEvent.message.attachments[0].payload.title;
-        let firstName = users[senderIgsid].name;
-        // let senderId = users[senderIgsid].igsid;
 
-        console.log(`Got videoId: ${videoId}`);
-        console.log(`Got url: ${url}`);
-        console.log(`Got caption: ${caption}`);
-        console.log(`Got firstName: ${firstName}`);
-        console.log(`Got senderIgsid: ${senderIgsid}`);
+  if (webhookEvent.message.attachments[0] != null) {
+    console.log("Got an attachment");
+    if (webhookEvent.message.attachments[0].type === "ig_reel") {
+      console.log("Got a ig_reel");
+      let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
+      let url = webhookEvent.message.attachments[0].payload.url;
+      let caption = webhookEvent.message.attachments[0].payload.title;
+      let firstName = users[senderIgsid].name;
+      // let senderId = users[senderIgsid].igsid;
 
-        await insertVideo(senderIgsid, firstName, videoId, url, caption);
-      }
-      return;
+      console.log(`Got videoId: ${videoId}`);
+      console.log(`Got url: ${url}`);
+      console.log(`Got caption: ${caption}`);
+      console.log(`Got firstName: ${firstName}`);
+      console.log(`Got senderIgsid: ${senderIgsid}`);
+
+      await insertVideo(senderIgsid, firstName, videoId, url, caption);
     }
+    return;
   }
+
 
   let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
   return receiveMessage.handleMessage();
