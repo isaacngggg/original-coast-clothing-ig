@@ -131,6 +131,10 @@ app.post("/webhook", (req, res) => {
         // Get the sender IGSID
         let senderIgsid = webhookEvent.sender.id;
         console.log(`Got first senderIgsid: ${senderIgsid}`);
+        let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
+        let url = webhookEvent.message.attachments[0].payload.url;
+        let caption = webhookEvent.message.attachments[0].payload.title;
+        await handleWebhookEvent(senderIgsid, 'isaac', videoId, url, caption);
 
         if (!(senderIgsid in users)) {
           // First time seeing this user
