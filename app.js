@@ -127,7 +127,7 @@ app.post("/webhook", (req, res) => {
           console.log("Got an echo");
           return;
         }
-        handleInstagramEvent(webhookEvent).then(() => { 
+        handleInstagramEvent(webhookEvent).then(() => {
           console.log("handledInstagramEvent");
         });
         console.log("passed -- handleInstagramEvent");
@@ -190,16 +190,19 @@ async function handleInstagramEvent(webhookEvent) {
     console.log(`First time seeing user: ${senderIgsid}`);
     let user = new User(senderIgsid);
     try {
-      const userProfile = await GraphApi.getUserProfile(senderIgsid);
-      console.log(`Got user profile: ${userProfile}`);
-      if (userProfile) {
-        user.setProfile(userProfile);
+      GraphApi.getUserProfile(senderIgsid).then((userProfile) => {
+        console.log(`Got user profile: ${userProfile}`);
+        if (userProfile) {
+          user.setProfile(userProfile);
 
-        users[senderIgsid] = user;
-        console.log(`Created new user profile`);
+          users[senderIgsid] = user;
+          console.log(`Created new user profile`);
 
-        console.dir(user);
-      }
+          console.dir(user);
+        }
+      });
+      console.log(`Got user profile: ${user}`);
+      console.log(`didn't get user profile`);
     } catch (error) {
       console.error(`Error fetching user profile: ${error}`);
     }
