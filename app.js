@@ -148,7 +148,7 @@ app.post("/webhook", (req, res) => {
         }
 
         // Check if user profile exists before handling attachments
-        if (users[senderIgsid]) {
+        if (userProfile) {
           if (webhookEvent.message.attachments[0] != null) {
             console.log("Got an attachment");
             if (webhookEvent.message.attachments[0].type === "ig_reel") {
