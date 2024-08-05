@@ -18,6 +18,8 @@ const express = require("express"),
   GraphApi = require("./services/graph-api"),
   User = require("./services/user"),
   config = require("./services/config"),
+  cors = require('cors'),
+  axios = require('axios'),
 
   { supabase, insertVideoData } = require('./supabaseClient'),
   i18n = require("./i18n.config"),
@@ -31,10 +33,13 @@ var users = {};
 
 // Parse application/x-www-form-urlencoded
 app.use(
+  cors(),
   urlencoded({
     extended: true
   })
 );
+
+
 
 // Parse application/json. Verify that callback came from Facebook
 app.use(json({ verify: verifyRequestSignature }));
@@ -59,6 +64,10 @@ app.all("*", function (req, res, next) {
 // Respond with index file when a GET request is made to the homepage
 app.get("/", function (_req, res) {
   res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+app.get('/test-http-request', async (req, res) => {
+  testApiCall(res);
 });
 
 // Add support for GET requests to our webhook
@@ -147,6 +156,21 @@ app.post("/webhook", (req, res) => {
   }
 });
 
+async function testApiCall(res) {
+  const url = "https://api.example.com/test-endpoint"; // Replace with your actual endpoint
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log("API call successful:", data);
+  } catch (error) {
+    console.error("API call failed:", error);
+  }
+}
+
 // Verify that the callback came from Facebook.
 function verifyRequestSignature(req, res, buf) {
   const signature = req.headers["x-hub-signature"];
@@ -208,28 +232,28 @@ async function handleInstagramEvent(webhookEvent) {
     }
   }
 
+  if (users[senderIgsid]) {
+    if (webhookEvent.message.attachments[0] != null) {
+      console.log("Got an attachment");
+      if (webhookEvent.message.attachments[0].type === "ig_reel") {
+        console.log("Got a ig_reel");
+        let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
+        let url = webhookEvent.message.attachments[0].payload.url;
+        let caption = webhookEvent.message.attachments[0].payload.title;
+        let firstName = users[senderIgsid].name;
+        // let senderId = users[senderIgsid].igsid;
 
-  if (webhookEvent.message.attachments[0] != null) {
-    console.log("Got an attachment");
-    if (webhookEvent.message.attachments[0].type === "ig_reel") {
-      console.log("Got a ig_reel");
-      let videoId = webhookEvent.message.attachments[0].payload.reel_video_id;
-      let url = webhookEvent.message.attachments[0].payload.url;
-      let caption = webhookEvent.message.attachments[0].payload.title;
-      let firstName = users[senderIgsid].name;
-      // let senderId = users[senderIgsid].igsid;
+        console.log(`Got videoId: ${videoId}`);
+        console.log(`Got url: ${url}`);
+        console.log(`Got caption: ${caption}`);
+        console.log(`Got firstName: ${firstName}`);
+        console.log(`Got senderIgsid: ${senderIgsid}`);
 
-      console.log(`Got videoId: ${videoId}`);
-      console.log(`Got url: ${url}`);
-      console.log(`Got caption: ${caption}`);
-      console.log(`Got firstName: ${firstName}`);
-      console.log(`Got senderIgsid: ${senderIgsid}`);
-
-      await insertVideo(senderIgsid, firstName, videoId, url, caption);
+        await insertVideo(senderIgsid, firstName, videoId, url, caption);
+      }
+      return;
     }
-    return;
   }
-
 
   let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
   return receiveMessage.handleMessage();
