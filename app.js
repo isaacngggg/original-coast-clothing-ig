@@ -118,7 +118,7 @@ app.post("/webhook", (req, res) => {
       }
 
       // Iterate over webhook events - there may be multiple
-      entry.messaging.forEach(async function (webhookEvent) {
+      for (const webhookEvent of entry.messaging) {
         // Discard uninteresting events
         if (
           "message" in webhookEvent &&
@@ -136,7 +136,8 @@ app.post("/webhook", (req, res) => {
           // First time seeing this user
           console.log(`First time seeing user: ${senderIgsid}`);
           let user = new User(senderIgsid);
-          GraphApi.getUserProfile(senderIgsid).then((userProfile) => {
+          try {
+            const userProfile = await GraphApi.getUserProfile(senderIgsid);
             console.log(`Got user profile: ${userProfile}`);
             if (userProfile) {
               user.setProfile(userProfile);
@@ -146,9 +147,11 @@ app.post("/webhook", (req, res) => {
 
               console.dir(user);
             }
-          });
+          } catch (error) {
+            console.error(`Error fetching user profile: ${error}`);
+          }
         }
-        
+
         if (users[senderIgsid]) {
           if (webhookEvent.message.attachments[0] != null) {
             console.log("Got an attachment");
@@ -174,7 +177,7 @@ app.post("/webhook", (req, res) => {
 
         let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
         return receiveMessage.handleMessage();
-      });
+      };
     });
   } else if (body.object === "page") {
     // Catch if the event came from Messenger webhook instead of Instagram
