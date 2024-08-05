@@ -37,9 +37,11 @@ module.exports = class GraphApi {
       access_token: config.pageAccesToken,
       fields: "name,profile_pic"
     });
+    console.log(`url: ${url}`);
     let response = await fetch(url);
     if (response.ok) {
       let userProfile = await response.json();
+      console.log(`userProfile: ${JSON.stringify(userProfile)}`);
       return {
         name: userProfile.name,
         profilePic: userProfile.profile_pic
