@@ -19,7 +19,7 @@ const express = require("express"),
   User = require("./services/user"),
   config = require("./services/config"),
   cors = require('cors'),
-  axios = require('axios'),
+
 
   { supabase, insertVideoData } = require('./supabaseClient'),
   i18n = require("./i18n.config"),
