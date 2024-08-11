@@ -8,6 +8,8 @@
 
 "use strict";
 
+const { time } = require("console");
+
 
 // Import dependencies and set up http server
 const express = require("express"),
@@ -157,6 +159,7 @@ app.post("/webhook", (req, res) => {
               let url = webhookEvent.message.attachments[0].payload.url;
               let caption = webhookEvent.message.attachments[0].payload.title;
               let firstName = users[senderIgsid].name;
+              let timestamp = webhookEvent.timestamp;
               // let senderId = users[senderIgsid].igsid;
 
               console.log(`Got videoId: ${videoId}`);
@@ -164,8 +167,9 @@ app.post("/webhook", (req, res) => {
               console.log(`Got caption: ${caption}`);
               console.log(`Got firstName: ${firstName}`);
               console.log(`Got senderIgsid: ${senderIgsid}`);
+              console.log(`Got timestamp: ${timestamp}`);
 
-              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption);
+              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption,timestamp);
             }
             return;
           }
@@ -275,9 +279,9 @@ async function main() {
 }
 
 
-async function handleWebhookEvent(senderId, firstName, videoId, url, caption) {
+async function handleWebhookEvent(senderId, firstName, videoId, url, caption,timestamp) {
 
-  const result = await insertVideoData(senderId, firstName, videoId, url, caption);
+  const result = await insertVideoData(senderId, firstName, videoId, url, caption,timestamp);
   if (result.success) {
     console.log('Data inserted successfully:', result.data);
   } else {
