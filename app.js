@@ -161,6 +161,19 @@ app.post("/webhook", (req, res) => {
 
         // Check if user profile exists before handling attachments
         if (users[senderIgsid]) {
+          if (webhookEvent.message.text) {
+            console.log("Got a text message");
+            let firstName = users[senderIgsid].name;
+            let timestamp = webhookEvent.timestamp;
+            let message_text = webhookEvent.message.text;
+            // let senderId = users[senderIgsid].igsid;
+            console.log(`Got firstName: ${firstName}`);
+            console.log(`Got senderIgsid: ${senderIgsid}`);
+            console.log(`Got timestamp: ${timestamp}`);
+            console.log(`Got message_text: ${message_text}`);
+
+            await handleWebhookEvent(senderIgsid, firstName, null, null, null,timestamp,message_text);
+          }
           
           if (webhookEvent.message.attachments != null) {
             console.log("Got an attachment");
