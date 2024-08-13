@@ -5,11 +5,11 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function insertVideoData(senderId, firstName, videoId, url, caption,timestamp) {
+async function insertVideoData(senderId, firstName, videoId, url, caption,timestamp,message_text) {
     const { data, error } = await supabase
         .from('videos')
         .insert([
-            { sender_id: senderId,first_name:firstName, video_id: videoId, url: url, caption: caption ,timestamp:timestamp}
+            { sender_id: senderId,first_name:firstName, video_id: videoId, url: url, caption: caption ,timestamp:timestamp,message_text:message_text}
         ]);
 
     if (error) {

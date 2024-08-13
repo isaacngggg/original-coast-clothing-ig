@@ -134,6 +134,8 @@ app.post("/webhook", (req, res) => {
         let senderIgsid = webhookEvent.sender.id;
         console.log(`Got first senderIgsid: ${senderIgsid}`);
 
+        console.log(`Got webhookEvent: ${webhookEvent.message}`);
+
         if (!(senderIgsid in users)) {
           // First time seeing this user
           let user = new User(senderIgsid);
@@ -151,7 +153,8 @@ app.post("/webhook", (req, res) => {
 
         // Check if user profile exists before handling attachments
         if (users[senderIgsid]) {
-          if (webhookEvent.message.attachments[0] != null) {
+          
+          if (webhookEvent.message.attachments != null) {
             console.log("Got an attachment");
             if (webhookEvent.message.attachments[0].type === "ig_reel") {
               console.log("Got a ig_reel");
@@ -161,6 +164,7 @@ app.post("/webhook", (req, res) => {
               let firstName = users[senderIgsid].name;
               let timestamp = webhookEvent.timestamp;
               // let senderId = users[senderIgsid].igsid;
+              let message_text = webhookEvent.message.text;
 
               console.log(`Got videoId: ${videoId}`);
               console.log(`Got url: ${url}`);
@@ -169,9 +173,11 @@ app.post("/webhook", (req, res) => {
               console.log(`Got senderIgsid: ${senderIgsid}`);
               console.log(`Got timestamp: ${timestamp}`);
 
-              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption,timestamp);
+              await handleWebhookEvent(senderIgsid, firstName, videoId, url, caption,timestamp,message_text);
             }
-            return;
+            else {
+              console.log("Got an attachment but not an ig_reel");
+            }
           }
         }
         let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
@@ -279,9 +285,9 @@ async function main() {
 }
 
 
-async function handleWebhookEvent(senderId, firstName, videoId, url, caption,timestamp) {
+async function handleWebhookEvent(senderId, firstName, videoId, url, caption,timestamp,message_text) {
 
-  const result = await insertVideoData(senderId, firstName, videoId, url, caption,timestamp);
+  const result = await insertVideoData(senderId, firstName, videoId, url, caption,timestamp,message_text);
   if (result.success) {
     console.log('Data inserted successfully:', result.data);
   } else {
