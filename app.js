@@ -151,6 +151,14 @@ app.post("/webhook", (req, res) => {
           }
         }
 
+        // if is_deleted: true then delete input
+
+        if (webhookEvent.message.is_deleted) {
+          console.log("Got a deleted message");
+
+          return;
+        }
+
         // Check if user profile exists before handling attachments
         if (users[senderIgsid]) {
           
@@ -180,8 +188,8 @@ app.post("/webhook", (req, res) => {
             }
           }
         }
-        let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
-        return receiveMessage.handleMessage();
+        // let receiveMessage = new Receive(users[senderIgsid], webhookEvent);
+        // return receiveMessage.handleMessage();
       });
     });
   } else if (body.object === "page") {
