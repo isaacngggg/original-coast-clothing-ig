@@ -155,9 +155,49 @@ app.post("/webhook", (req, res) => {
 
         if (webhookEvent.message.is_deleted) {
           console.log("Got a deleted message");
+          
 
-          return;
-        }
+          const emailResponse = await fetch("https://api.mailjet.com/v3.1/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Basic ${
+                btoa(`${mailjetApiKey}:${mailjetApiSecret}`)
+              }`,
+            },
+            body: JSON.stringify({
+              Messages: [
+                {
+                  From: {
+                    Email: "isaacnghonchung@gmail.com",
+                    Name: "Greenroom Messaging",
+                  },
+                  To: [
+                    {
+                      Email: "thegreenroomapp.ldn@gmail.com",
+                      Name: "Recipient",
+                    },
+                  ],
+                  Subject: "New message has been sent",
+                  TextPart:
+                    `A message from a new customer has been deleted. \n\nMessage: ${webhookEvent.message.text}`,
+                },
+              ],
+            }),
+          });
+    
+          const emailResult = await emailResponse.json();
+          if (emailResponse.ok && emailResult.Messages[0].Status === "success") {
+              console.log("Email sent successfully");
+              return;
+            } else {
+              console.error("Failed to send email", emailResult);
+              return;
+            }
+          }
+      
+          
+  
 
         // Check if user profile exists before handling attachments
         if (users[senderIgsid]) {
